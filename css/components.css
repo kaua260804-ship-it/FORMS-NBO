@@ -1,5 +1,5 @@
 /* ============================================================
-   components.css — Botões, inputs, cards, modais, toasts
+   components.css — Botões, inputs, cards, toasts
    ============================================================ */
 
 /* ---------- Botões ---------- */
@@ -170,7 +170,6 @@
     color: var(--primary-dark);
 }
 
-/* Card de grupo com contador */
 .card--grupo {
     flex-direction: column;
     gap: 6px;
@@ -216,89 +215,6 @@
     background: rgba(40,167,69,.15);
     color: var(--success-dark);
 }
-
-/* ---------- Modal ---------- */
-.modal {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    animation: fadeIn .2s ease;
-}
-
-.modal__backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,.5);
-}
-
-.modal__dialog {
-    position: relative;
-    background: #fff;
-    border-radius: var(--radius) var(--radius) 0 0;
-    width: 100%;
-    max-width: 560px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 20px;
-    animation: slideUp .25s ease;
-    box-shadow: var(--shadow-lg);
-}
-
-@media (min-width: 640px) {
-    .modal { align-items: center; }
-    .modal__dialog { border-radius: var(--radius); }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-}
-
-.modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.modal__header h3 { font-size: 1.15rem; }
-
-.modal__produto {
-    color: var(--text-soft);
-    font-size: .92rem;
-    margin-bottom: 16px;
-    padding: 10px 12px;
-    background: #f5f7fa;
-    border-radius: var(--radius-sm);
-    border-left: 4px solid var(--primary);
-}
-
-.modal__options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.motivo-btn {
-    min-height: 54px;
-    padding: 0 16px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: #fff;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: all .15s;
-}
-
-.motivo-btn:hover { border-color: var(--primary); background: rgba(0,123,255,.04); }
-.motivo-btn i { color: var(--danger); }
 
 /* ---------- Toasts ---------- */
 .toast-container {
