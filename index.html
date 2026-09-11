@@ -91,7 +91,7 @@
         </div>
     </section>
 
-    <!-- TELA 3: Seleção de Grupo (com contagem de itens) -->
+    <!-- TELA 3: Seleção de Grupo -->
     <section class="step" data-step="3" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -107,7 +107,7 @@
         </div>
     </section>
 
-    <!-- TELA 4: Conferência de Produtos (sem paginação) -->
+    <!-- TELA 4: Conferência de Produtos -->
     <section class="step" data-step="4" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -127,7 +127,7 @@
 
             <p class="conf-pergunta">
                 <i class="fas fa-question-circle"></i>
-                Estes itens possuem estoque? Se não possui, qual o motivo?
+                Este item possui estoque?
             </p>
 
             <div id="listaProdutos" class="products"></div>
@@ -159,19 +159,6 @@
     </section>
 
 </main>
-
-<!-- ===== MODAL: Motivo de "sem estoque" ===== -->
-<div class="modal" id="modalMotivo" hidden>
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__dialog" role="dialog" aria-modal="true">
-        <div class="modal__header">
-            <h3>Motivo da falta</h3>
-            <button type="button" class="btn-icon" data-close-modal><i class="fas fa-times"></i></button>
-        </div>
-        <p class="modal__produto" id="modalProdutoNome"></p>
-        <div class="modal__options" id="modalMotivos"></div>
-    </div>
-</div>
 
 <!-- ===== LOADING ===== -->
 <div class="loading" id="loading" hidden>
