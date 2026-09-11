@@ -30,7 +30,8 @@ const CONFIG = {
         'RUPTURA NO CD - SEM ESTOQUE',
         'RUPTURA NO CD - CORTE DE PEDIDO',
         'PEDIDO PENDENTE',
-        'SEM PEDIDO'
+        'SEM PEDIDO',
+        'PEDIDO DO COMERCIAL'
     ],
 
     /** Etapas do wizard (6 etapas agora) */
