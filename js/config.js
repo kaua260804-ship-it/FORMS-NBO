@@ -7,7 +7,7 @@ const CONFIG = {
      * URL do Web App do Google Apps Script.
      * Substitua pela URL gerada no deploy.
      */
-    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyulpzUhq-kw69nqTvcjSMhncb6kYFiWKUYVyV9YX1G8FqVZTbo68Jjw7rLQMRHOqJ1/exec',
+    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/COLE_AQUI_SEU_ID/exec',
 
     /** Timeout das requisições (ms) */
     TIMEOUT: 45000,
@@ -18,23 +18,13 @@ const CONFIG = {
         ESTADO:  'conf_estoque_estado'
     },
 
-    /** Status possíveis */
+    /** Status possíveis (gravados na coluna STATUS) */
     STATUS: {
         OK:  'SIM',
         NOK: 'NÃO'
     },
 
-    /** Motivos de falta de estoque */
-    MOTIVOS: [
-        'RUPTURA NA LOJA',
-        'RUPTURA NO CD - SEM ESTOQUE',
-        'RUPTURA NO CD - CORTE DE PEDIDO',
-        'PEDIDO PENDENTE',
-        'SEM PEDIDO',
-        'PEDIDO DO COMERCIAL'
-    ],
-
-    /** Etapas do wizard (6 etapas agora) */
+    /** Etapas do wizard */
     STEPS: {
         USUARIO:    0,
         EMPRESA:    1,
