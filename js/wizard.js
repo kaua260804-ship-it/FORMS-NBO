@@ -444,10 +444,10 @@ const Wizard = (() => {
             </div>
             <div class="product__actions">
                 <button type="button" class="btn btn--success btn-ok">
-                    <i class="fas fa-check"></i> COM ESTOQUE
+                    <i class="fas fa-check"></i> SIM
                 </button>
                 <button type="button" class="btn btn--danger btn-nok">
-                    <i class="fas fa-times"></i> SEM ESTOQUE
+                    <i class="fas fa-times"></i> NÃO
                 </button>
             </div>
             ${resp.status === STATUS.NOK && resp.motivo
