@@ -7,7 +7,7 @@ const CONFIG = {
      * URL do Web App do Google Apps Script.
      * Substitua pela URL gerada no deploy.
      */
-    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/COLE_AQUI_SEU_ID/exec',
+    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyulpzUhq-kw69nqTvcjSMhncb6kYFiWKUYVyV9YX1G8FqVZTbo68Jjw7rLQMRHOqJ1/exec',
 
     /** Timeout das requisições (ms) */
     TIMEOUT: 45000,
