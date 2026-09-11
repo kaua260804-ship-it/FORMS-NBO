@@ -3,7 +3,7 @@
    ============================================================ */
 
 const Wizard = (() => {
-    const { STEPS, MOTIVOS, STATUS, TOTAL_STEPS } = CONFIG;
+    const { STEPS, STATUS, TOTAL_STEPS } = CONFIG;
 
     /* ---------- Estado ---------- */
     const state = {
@@ -13,7 +13,7 @@ const Wizard = (() => {
         grupo: '',           // grupo escolhido ('' = todos)
         produtos: [],        // produtos (empresa + categoria)
         grupos: [],          // [{ nome, nomeKey, produtos, total }]
-        respostas: {},       // { codigo: { status, motivo } }
+        respostas: {},       // { codigo: { status } }
         enviado: false
     };
 
@@ -293,10 +293,6 @@ const Wizard = (() => {
             .map((g) => ({ ...g, total: g.produtos.length }));
     }
 
-    /**
-     * Garante que state.grupo (que pode ter vindo do localStorage)
-     * corresponde a um grupo real. Se não corresponder, redefine ''.
-     */
     function reconciliarGrupoSelecionado() {
         if (!state.grupo) return;
         const keyAlvo = normalizar(state.grupo);
@@ -373,13 +369,6 @@ const Wizard = (() => {
     /* ============================================================
        TELA 4 — Produtos (sem paginação)
        ============================================================ */
-    /**
-     * Retorna os produtos que devem aparecer na tela atual.
-     * - Se state.grupo === '', retorna TODOS os produtos.
-     * - Se state.grupo está definido, busca o grupo pela chave normalizada.
-     * - Fallback: se não encontrar (por qualquer motivo), retorna todos,
-     *   evitando a tela vazia silenciosa.
-     */
     function produtosDoGrupoAtual() {
         if (!state.grupo) return state.produtos;
 
@@ -388,13 +377,11 @@ const Wizard = (() => {
 
         if (g && g.produtos.length) return g.produtos;
 
-        // Fallback defensivo: filtra direto da lista plana
         const filtrados = state.produtos.filter(
             (p) => normalizar(p.GRUPO) === keyAlvo
         );
         if (filtrados.length) return filtrados;
 
-        // Último recurso: devolve tudo (evita tela vazia silenciosa)
         return state.produtos;
     }
 
@@ -450,25 +437,20 @@ const Wizard = (() => {
                     <i class="fas fa-times"></i> NÃO
                 </button>
             </div>
-            ${resp.status === STATUS.NOK && resp.motivo
-                ? `<div class="product__motivo"><i class="fas fa-exclamation-triangle"></i> ${resp.motivo}</div>`
-                : ''}
         `;
 
         el.querySelector('.btn-ok').addEventListener('click', () => {
-            state.respostas[codigo] = { status: STATUS.OK, motivo: '' };
+            state.respostas[codigo] = { status: STATUS.OK };
             persistir();
             atualizarProduto(el, codigo);
             atualizarContadores();
         });
 
         el.querySelector('.btn-nok').addEventListener('click', () => {
-            abrirModalMotivo(p, (motivo) => {
-                state.respostas[codigo] = { status: STATUS.NOK, motivo };
-                persistir();
-                atualizarProduto(el, codigo);
-                atualizarContadores();
-            });
+            state.respostas[codigo] = { status: STATUS.NOK };
+            persistir();
+            atualizarProduto(el, codigo);
+            atualizarContadores();
         });
 
         return el;
@@ -479,16 +461,6 @@ const Wizard = (() => {
         el.classList.remove('is-ok', 'is-nok');
         if (resp.status === STATUS.OK)  el.classList.add('is-ok');
         if (resp.status === STATUS.NOK) el.classList.add('is-nok');
-
-        const old = el.querySelector('.product__motivo');
-        if (old) old.remove();
-
-        if (resp.status === STATUS.NOK && resp.motivo) {
-            const div = document.createElement('div');
-            div.className = 'product__motivo';
-            div.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${resp.motivo}`;
-            el.appendChild(div);
-        }
     }
 
     function atualizarContadores() {
@@ -499,48 +471,17 @@ const Wizard = (() => {
         $('#contadorTotal').textContent = total;
     }
 
-    /* ---------- Modal de motivo ---------- */
-    function abrirModalMotivo(produto, callback) {
-        const modal = $('#modalMotivo');
-        $('#modalProdutoNome').textContent = `${codigoDe(produto)} — ${produto.PRODUTO || ''}`;
-
-        const box = $('#modalMotivos');
-        box.innerHTML = '';
-        MOTIVOS.forEach((motivo) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'motivo-btn';
-            btn.innerHTML = `<i class="fas fa-circle-exclamation"></i> ${motivo}`;
-            btn.addEventListener('click', () => {
-                fecharModal();
-                callback(motivo);
-            });
-            box.appendChild(btn);
-        });
-
-        modal.hidden = false;
-    }
-
-    function fecharModal() {
-        $('#modalMotivo').hidden = true;
-    }
-
     /* ============================================================
        TELA 5 — Resumo
        ============================================================ */
     function montarResumo() {
         const total = state.produtos.length;
         const respondidos = Object.keys(state.respostas).length;
-        let ok = 0, nok = 0;
-        const porMotivo = {};
-        MOTIVOS.forEach((m) => { porMotivo[m] = 0; });
+        let sim = 0, nao = 0;
 
         Object.values(state.respostas).forEach((r) => {
-            if (r.status === STATUS.OK) ok++;
-            else if (r.status === STATUS.NOK) {
-                nok++;
-                if (porMotivo[r.motivo] !== undefined) porMotivo[r.motivo]++;
-            }
+            if (r.status === STATUS.OK) sim++;
+            else if (r.status === STATUS.NOK) nao++;
         });
 
         const catLabel = state.categoria || 'Todas';
@@ -561,14 +502,8 @@ const Wizard = (() => {
             </div>
 
             <div class="resumo__card">
-                <div class="resumo__linha resumo__ok"><span><i class="fas fa-check-circle" style="color:var(--success)"></i> COM ESTOQUE</span><strong>${ok}</strong></div>
-                <div class="resumo__linha resumo__nok"><span><i class="fas fa-times-circle" style="color:var(--danger)"></i> SEM ESTOQUE</span><strong>${nok}</strong></div>
-
-                <div class="resumo__motivos">
-                    ${MOTIVOS.map((m) => `
-                        <div class="resumo__motivo"><span>${m}</span><span>${porMotivo[m]}</span></div>
-                    `).join('')}
-                </div>
+                <div class="resumo__linha resumo__ok"><span><i class="fas fa-check-circle" style="color:var(--success)"></i> SIM</span><strong>${sim}</strong></div>
+                <div class="resumo__linha resumo__nok"><span><i class="fas fa-times-circle" style="color:var(--danger)"></i> NÃO</span><strong>${nao}</strong></div>
             </div>
         `;
 
@@ -604,7 +539,7 @@ const Wizard = (() => {
                     TIPO:      p.TIPO      || '',
                     USUARIO:   state.usuario,
                     STATUS:    r.status,
-                    MOTIVO:    r.motivo || '',
+                    MOTIVO:    '',   // coluna mantida em branco
                     DATA:      data,
                     HORA:      hora
                 };
@@ -686,12 +621,9 @@ const Wizard = (() => {
 
                 irPara(atual - 1);
 
-                // Ao voltar para a tela de grupos, re-renderiza a lista
                 if (atual - 1 === STEPS.GRUPO) renderGrupos();
             });
         });
-
-        $$('[data-close-modal]').forEach((el) => el.addEventListener('click', fecharModal));
 
         $('#btnIrParaResumo').addEventListener('click', () => {
             const lista = produtosDoGrupoAtual();
@@ -733,7 +665,6 @@ const Wizard = (() => {
                 await carregarEmpresas();
                 await carregarCategorias(saved.empresa);
 
-                // Só carrega produtos se categoria já foi escolhida
                 if (saved.categoria !== undefined && saved.categoria !== null) {
                     await carregarProdutos();
                     renderGrupos();
