@@ -42,10 +42,10 @@ const API = (() => {
         }
     }
 
-    const getEmpresas   = ()                 => get({ action: 'empresas' });
-    const getCategorias = (empresa)          => get({ action: 'categorias', empresa });
-    const getProdutos   = (empresa, categoria) => get({ action: 'produtos', empresa, categoria });
-    const salvarRespostas = (respostas)      => post({ action: 'salvar', respostas });
+    const getEmpresas     = ()                    => get({ action: 'empresas' });
+    const getCategorias   = (empresa)             => get({ action: 'categorias', empresa });
+    const getProdutos     = (empresa, categoria)  => get({ action: 'produtos', empresa, categoria });
+    const salvarRespostas = (respostas)           => post({ action: 'salvar', respostas });
 
     return { getEmpresas, getCategorias, getProdutos, salvarRespostas };
 })();
