@@ -20,8 +20,8 @@ const CONFIG = {
 
     /** Status possíveis */
     STATUS: {
-        OK:  'COM ESTOQUE',
-        NOK: 'SEM ESTOQUE'
+        OK:  'SIM',
+        NOK: 'NAO'
     },
 
     /** Motivos de falta de estoque */
