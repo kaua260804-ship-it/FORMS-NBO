@@ -1,0 +1,177 @@
+/* ============================================================
+   style.css — Reset, variáveis, layout base
+   ============================================================ */
+
+:root {
+    --primary: #007bff;
+    --primary-dark: #0056b3;
+    --success: #28a745;
+    --success-dark: #1e7e34;
+    --danger: #dc3545;
+    --danger-dark: #a71d2a;
+    --warning: #ffc107;
+    --muted: #6c757d;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #e1e6eb;
+    --text: #212529;
+    --text-soft: #55606b;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, .12);
+    --header-h: 108px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg);
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body { overflow-x: hidden; }
+
+h1, h2, h3 { line-height: 1.2; font-weight: 700; }
+
+button { font-family: inherit; cursor: pointer; }
+
+input, button { font-size: 1rem; }
+
+/* ---------- Layout ---------- */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.app-header__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    min-height: 48px;
+}
+
+.app-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: .95rem;
+}
+
+.app-header__brand i { font-size: 1.1rem; }
+
+.progress {
+    height: 6px;
+    background: #e9ecef;
+    overflow: hidden;
+}
+
+.progress__bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #4da3ff);
+    transition: width .35s ease;
+}
+
+.steps-indicator {
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 12px 12px;
+    gap: 4px;
+}
+
+.step-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .25s ease;
+}
+
+.step-dot.active {
+    background: var(--primary);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.step-dot.done {
+    background: var(--success);
+    color: #fff;
+}
+
+#appMain {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* ---------- Steps ---------- */
+.step { animation: fadeIn .25s ease; }
+
+.step__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.step__title {
+    font-size: 1.35rem;
+    color: var(--text);
+    flex: 1;
+}
+
+.step__subtitle { color: var(--text-soft); margin-bottom: 24px; }
+.step__hint { font-size: .85rem; color: var(--muted); margin-top: 4px; width: 100%; }
+
+.step__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 32px;
+}
+
+.step__body--center {
+    align-items: center;
+    text-align: center;
+    padding-top: 32px;
+}
+
+.hero-icon {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #4da3ff);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+}
+
+/* ---------- Util ---------- */
+.muted { color: var(--muted); font-size: .85rem; }
+[hidden] { display: none !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

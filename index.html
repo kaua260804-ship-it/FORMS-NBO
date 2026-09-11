@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
+    <title>Conferência de Estoque</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/wizard.css">
+</head>
+<body>
+
+<!-- ===== BARRA DE PROGRESSO FIXA ===== -->
+<header class="app-header">
+    <div class="app-header__top">
+        <div class="app-header__brand">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Conferência de Estoque</span>
+        </div>
+        <button type="button" id="btnUsuario" class="btn-icon" title="Trocar usuário" hidden>
+            <i class="fas fa-user-circle"></i>
+            <span id="usuarioLabel"></span>
+        </button>
+    </div>
+    <div class="progress" aria-hidden="true">
+        <div class="progress__bar" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="steps-indicator" id="stepsIndicator">
+        <span data-step="0" class="step-dot active">1</span>
+        <span data-step="1" class="step-dot">2</span>
+        <span data-step="2" class="step-dot">3</span>
+        <span data-step="3" class="step-dot">4</span>
+        <span data-step="4" class="step-dot">5</span>
+        <span data-step="5" class="step-dot">6</span>
+    </div>
+</header>
+
+<!-- ===== ÁREA PRINCIPAL ===== -->
+<main id="appMain">
+
+    <!-- TELA 0: Identificação do usuário -->
+    <section class="step" data-step="0">
+        <div class="step__body step__body--center">
+            <div class="hero-icon"><i class="fas fa-user-check"></i></div>
+            <h1 class="step__title">Bem-vindo!</h1>
+            <p class="step__subtitle">Digite seu nome para iniciar a conferência.</p>
+
+            <label class="field">
+                <span class="field__label">Seu nome</span>
+                <input type="text" id="inputUsuario" class="field__input" placeholder="Ex.: João Silva"
+                       autocomplete="name" maxlength="60" required>
+                <small class="field__error" id="erroUsuario"></small>
+            </label>
+
+            <button type="button" id="btnIniciar" class="btn btn--primary btn--lg">
+                <i class="fas fa-play"></i> Iniciar
+            </button>
+        </div>
+    </section>
+
+    <!-- TELA 1: Seleção de Empresa -->
+    <section class="step" data-step="1" hidden>
+        <div class="step__header">
+            <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
+            <h2 class="step__title">Selecione a Empresa</h2>
+        </div>
+        <div class="step__body">
+            <div class="search">
+                <i class="fas fa-search"></i>
+                <input type="search" id="buscaEmpresa" placeholder="Buscar empresa...">
+            </div>
+            <div id="listaEmpresas" class="cards-grid" role="list"></div>
+        </div>
+    </section>
+
+    <!-- TELA 2: Seleção de Categoria -->
+    <section class="step" data-step="2" hidden>
+        <div class="step__header">
+            <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
+            <h2 class="step__title">Selecione a Categoria</h2>
+            <p class="step__hint" id="empresaSelecionadaLabel"></p>
+        </div>
+        <div class="step__body">
+            <div class="search">
+                <i class="fas fa-search"></i>
+                <input type="search" id="buscaCategoria" placeholder="Buscar categoria...">
+            </div>
+            <div id="listaCategorias" class="cards-grid" role="list"></div>
+        </div>
+    </section>
+
+    <!-- TELA 3: Seleção de Grupo (com contagem de itens) -->
+    <section class="step" data-step="3" hidden>
+        <div class="step__header">
+            <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
+            <h2 class="step__title">Selecione o Grupo</h2>
+            <p class="step__hint" id="categoriaSelecionadaLabel"></p>
+        </div>
+        <div class="step__body">
+            <div class="search">
+                <i class="fas fa-search"></i>
+                <input type="search" id="buscaGrupo" placeholder="Buscar grupo...">
+            </div>
+            <div id="listaGrupos" class="cards-grid cards-grid--grupos" role="list"></div>
+        </div>
+    </section>
+
+    <!-- TELA 4: Conferência de Produtos (sem paginação) -->
+    <section class="step" data-step="4" hidden>
+        <div class="step__header">
+            <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
+            <h2 class="step__title">Conferência de Produtos</h2>
+        </div>
+
+        <div class="step__body">
+            <div class="conf-header">
+                <div class="conf-header__grupo">
+                    <strong id="grupoAtualLabel">Grupo: —</strong>
+                    <span id="grupoAtualContador" class="muted"></span>
+                </div>
+                <div class="conf-header__progress">
+                    <span id="contadorRespondidos">0</span> / <span id="contadorTotal">0</span> respondidos
+                </div>
+            </div>
+
+            <p class="conf-pergunta">
+                <i class="fas fa-question-circle"></i>
+                Estes itens possuem estoque? Se não possui, qual o motivo?
+            </p>
+
+            <div id="listaProdutos" class="products"></div>
+
+            <button type="button" id="btnIrParaResumo" class="btn btn--primary btn--lg btn--block">
+                <i class="fas fa-flag-checkered"></i> Finalizar e Revisar
+            </button>
+        </div>
+    </section>
+
+    <!-- TELA 5: Confirmação / Resumo -->
+    <section class="step" data-step="5" hidden>
+        <div class="step__header">
+            <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
+            <h2 class="step__title">Confirmação</h2>
+        </div>
+        <div class="step__body">
+            <div class="resumo" id="resumoBox"></div>
+
+            <div class="resumo-actions">
+                <button type="button" id="btnEnviar" class="btn btn--success btn--lg btn--block">
+                    <i class="fas fa-paper-plane"></i> Enviar Respostas
+                </button>
+                <button type="button" id="btnNovaConferencia" class="btn btn--secondary btn--lg btn--block" hidden>
+                    <i class="fas fa-redo"></i> Nova Conferência
+                </button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ===== MODAL: Motivo de "sem estoque" ===== -->
+<div class="modal" id="modalMotivo" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true">
+        <div class="modal__header">
+            <h3>Motivo da falta</h3>
+            <button type="button" class="btn-icon" data-close-modal><i class="fas fa-times"></i></button>
+        </div>
+        <p class="modal__produto" id="modalProdutoNome"></p>
+        <div class="modal__options" id="modalMotivos"></div>
+    </div>
+</div>
+
+<!-- ===== LOADING ===== -->
+<div class="loading" id="loading" hidden>
+    <div class="spinner"></div>
+    <p id="loadingMsg">Carregando...</p>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/wizard.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
