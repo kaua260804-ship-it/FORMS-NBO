@@ -1,13 +1,11 @@
 /* ============================================================
-   main.js — Inicialização e helpers de UI (toast/loading)
+   main.js — Inicialização e helpers de UI
    ============================================================ */
 
 const UI = (() => {
-    let toastId = 0;
-
-    /** Exibe notificação temporária */
     function toast(msg, tipo = 'info', duracao = 3500) {
         const container = document.getElementById('toastContainer');
+        if (!container) return;
         const el = document.createElement('div');
         el.className = `toast toast--${tipo}`;
         const icones = { success: 'fa-check-circle', error: 'fa-circle-xmark', info: 'fa-info-circle' };
@@ -21,24 +19,27 @@ const UI = (() => {
         }, duracao);
     }
 
-    /** Mostra o loading global */
     function loading(msg = 'Carregando...') {
-        document.getElementById('loadingMsg').textContent = msg;
-        document.getElementById('loading').hidden = false;
+        const l = document.getElementById('loading');
+        const m = document.getElementById('loadingMsg');
+        if (m) m.textContent = msg;
+        if (l) l.hidden = false;
     }
 
-    /** Esconde o loading */
     function hideLoading() {
-        document.getElementById('loading').hidden = true;
+        const l = document.getElementById('loading');
+        if (l) l.hidden = true;
     }
 
     return { toast, loading, hideLoading };
 })();
 
-/* ---------- Bootstrap ---------- */
+window.UI = UI;
+
 document.addEventListener('DOMContentLoaded', () => {
-    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('COLE_AQUI')) {
-        UI.toast('Configure a URL do Apps Script em js/config.js antes de usar.', 'error', 8000);
+    if (typeof Wizard === 'undefined') {
+        UI.toast('Módulo Wizard não carregado. Verifique o Console (F12).', 'error', 8000);
+        return;
     }
     Wizard.iniciar();
 });

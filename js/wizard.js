@@ -3,24 +3,25 @@
    ============================================================ */
 
 const Wizard = (() => {
-    const { STEPS, STATUS, TOTAL_STEPS } = CONFIG;
+    const STEPS = { USUARIO: 0, EMPRESA: 1, CATEGORIA: 2, GRUPO: 3, PRODUTOS: 4, RESUMO: 5, DASHBOARD: 6 };
+    const TOTAL_STEPS = 5;
+    const STATUS = { OK: 'SIM', NOK: 'NÃO' };
+    const USUARIO_DASHBOARD = 'FR1B4L';
 
-    /* ---------- Estado ---------- */
     const state = {
         usuario: '',
         empresa: '',
         categoria: '',
-        grupo: '',           // grupo escolhido ('' = todos)
-        produtos: [],        // produtos (empresa + categoria)
-        grupos: [],          // [{ nome, nomeKey, produtos, total }]
-        respostas: {},       // { codigo: { status } }
+        grupo: '',
+        produtos: [],
+        grupos: [],
+        respostas: {},
         enviado: false
     };
 
     const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-    /* ---------- Helpers ---------- */
     const pad = (n) => String(n).padStart(2, '0');
 
     function agora() {
@@ -31,7 +32,6 @@ const Wizard = (() => {
         };
     }
 
-    /** Normaliza string: remove acentos, espaços extras, minúsculas. */
     function normalizar(str) {
         return String(str == null ? '' : str)
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -44,15 +44,23 @@ const Wizard = (() => {
         return String(p['Codigo C5'] || p.CODIGO || '').trim();
     }
 
-    /* ---------- Navegação ---------- */
     function irPara(step, opcoes = {}) {
         if (step < 0 || step > 5) return;
         if (opcoes.salvarEstado !== false) persistir();
 
+        const progress = document.querySelector('.progress');
+        const stepsInd  = document.querySelector('.steps-indicator');
+        if (progress) progress.style.display = '';
+        if (stepsInd) stepsInd.style.display = '';
+
+        const brand = document.querySelector('.app-header__brand span');
+        if (brand) brand.textContent = 'Conferência de Estoque';
+
         $$('.step').forEach((el) => { el.hidden = Number(el.dataset.step) !== step; });
 
         const pct = (step / TOTAL_STEPS) * 100;
-        $('#progressBar').style.width = `${pct}%`;
+        const bar = $('#progressBar');
+        if (bar) bar.style.width = `${pct}%`;
 
         $$('.step-dot').forEach((dot) => {
             const n = Number(dot.dataset.step);
@@ -63,7 +71,6 @@ const Wizard = (() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    /* ---------- Persistência ---------- */
     function persistir() {
         Storage.setEstado({
             usuario:   state.usuario,
@@ -82,9 +89,7 @@ const Wizard = (() => {
         return saved;
     }
 
-    /* ============================================================
-       TELA 0 — Usuário
-       ============================================================ */
+    /* ---------- TELA 0 — Usuário ---------- */
     function initUsuario() {
         const input = $('#inputUsuario');
         const erro  = $('#erroUsuario');
@@ -102,6 +107,16 @@ const Wizard = (() => {
             }
             erro.textContent = '';
             input.classList.remove('is-invalid');
+
+            // ===== ACESSO AO DASHBOARD =====
+            if (nome.toUpperCase() === USUARIO_DASHBOARD.toUpperCase()) {
+                state.usuario = nome;
+                Storage.setUsuario(nome);
+                atualizarLabelUsuario();
+                abrirDashboard();
+                return;
+            }
+
             state.usuario = nome;
             Storage.setUsuario(nome);
             atualizarLabelUsuario();
@@ -126,21 +141,38 @@ const Wizard = (() => {
         }
     }
 
-    /* ============================================================
-       TELA 1 — Empresa
-       ============================================================ */
+    function abrirDashboard() {
+        const progress = document.querySelector('.progress');
+        const stepsInd  = document.querySelector('.steps-indicator');
+        if (progress) progress.style.display = 'none';
+        if (stepsInd) stepsInd.style.display = 'none';
+
+        $$('.step').forEach((el) => { el.hidden = true; });
+        const dash = document.querySelector('.step[data-step="6"]');
+        if (dash) dash.hidden = false;
+
+        const brand = document.querySelector('.app-header__brand span');
+        if (brand) brand.textContent = 'Dashboard de Ruptura';
+
+        if (window.Dashboard && typeof window.Dashboard.iniciar === 'function') {
+            window.Dashboard.iniciar();
+        } else {
+            alert('Módulo do dashboard não carregado. Abra o DevTools (F12) e verifique os erros no Console.');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ---------- TELA 1 — Empresa ---------- */
     async function carregarEmpresas() {
         if ($('#listaEmpresas').children.length > 0) return;
-
         UI.loading('Carregando empresas...');
         try {
-            const resp = await API.getEmpresas();
-            if (!resp.sucesso) throw new Error(resp.mensagem || 'Falha ao carregar empresas.');
-            renderEmpresas(resp.dados || []);
+            const empresas = await XLSXLoader.getEmpresas();
+            renderEmpresas(empresas || []);
         } catch (e) {
             UI.toast('Erro ao carregar empresas: ' + e.message, 'error');
             $('#listaEmpresas').innerHTML =
-                '<p class="muted">Não foi possível carregar. <button class="btn btn--primary" onclick="location.reload()">Tentar novamente</button></p>';
+                '<p class="muted">Não foi possível carregar <code>dados/FORMS.xlsx</code>.</p>';
         } finally {
             UI.hideLoading();
         }
@@ -149,12 +181,10 @@ const Wizard = (() => {
     function renderEmpresas(empresas) {
         const box = $('#listaEmpresas');
         box.innerHTML = '';
-
         if (!empresas.length) {
-            box.innerHTML = '<p class="muted">Nenhuma empresa encontrada.</p>';
+            box.innerHTML = '<p class="muted">Nenhuma empresa encontrada no XLSX.</p>';
             return;
         }
-
         empresas.forEach((emp) => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -185,18 +215,14 @@ const Wizard = (() => {
         };
     }
 
-    /* ============================================================
-       TELA 2 — Categoria
-       ============================================================ */
+    /* ---------- TELA 2 — Categoria ---------- */
     async function carregarCategorias(empresa) {
         $('#empresaSelecionadaLabel').textContent = `Empresa: ${empresa}`;
         $('#listaCategorias').innerHTML = '';
         UI.loading('Carregando categorias...');
-
         try {
-            const resp = await API.getCategorias(empresa);
-            if (!resp.sucesso) throw new Error(resp.mensagem || 'Falha ao carregar categorias.');
-            renderCategorias(resp.dados || []);
+            const categorias = await XLSXLoader.getCategoriasPorEmpresa(empresa);
+            renderCategorias(categorias || []);
         } catch (e) {
             UI.toast('Erro ao carregar categorias: ' + e.message, 'error');
         } finally {
@@ -207,12 +233,10 @@ const Wizard = (() => {
     function renderCategorias(categorias) {
         const box = $('#listaCategorias');
         box.innerHTML = '';
-
         if (!categorias.length) {
             box.innerHTML = '<p class="muted">Nenhuma categoria encontrada.</p>';
             return;
         }
-
         const allBtn = document.createElement('button');
         allBtn.type = 'button';
         allBtn.className = 'card card--all';
@@ -247,22 +271,16 @@ const Wizard = (() => {
         state.grupos = [];
         state.respostas = {};
         persistir();
-
         await carregarProdutos();
         renderGrupos();
         irPara(STEPS.GRUPO);
     }
 
-    /* ============================================================
-       Carregamento de produtos + agrupamento
-       ============================================================ */
+    /* ---------- Carregamento de produtos ---------- */
     async function carregarProdutos() {
         UI.loading('Carregando produtos...');
         try {
-            const resp = await API.getProdutos(state.empresa, state.categoria);
-            if (!resp.sucesso) throw new Error(resp.mensagem || 'Falha ao carregar produtos.');
-
-            state.produtos = resp.dados || [];
+            state.produtos = await XLSXLoader.getProdutosPorEmpresaCategoria(state.empresa, state.categoria);
             agruparProdutos();
             reconciliarGrupoSelecionado();
         } catch (e) {
@@ -276,18 +294,13 @@ const Wizard = (() => {
 
     function agruparProdutos() {
         const mapa = new Map();
-
         state.produtos.forEach((p) => {
             const nomeBruto = String(p.GRUPO == null ? '' : p.GRUPO).trim();
             const nome = nomeBruto || 'SEM GRUPO';
             const key = normalizar(nome);
-
-            if (!mapa.has(key)) {
-                mapa.set(key, { nome, nomeKey: key, produtos: [] });
-            }
+            if (!mapa.has(key)) mapa.set(key, { nome, nomeKey: key, produtos: [] });
             mapa.get(key).produtos.push(p);
         });
-
         state.grupos = Array.from(mapa.values())
             .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
             .map((g) => ({ ...g, total: g.produtos.length }));
@@ -297,22 +310,15 @@ const Wizard = (() => {
         if (!state.grupo) return;
         const keyAlvo = normalizar(state.grupo);
         const existe = state.grupos.some((g) => g.nomeKey === keyAlvo);
-        if (!existe) {
-            state.grupo = '';
-            persistir();
-        }
+        if (!existe) { state.grupo = ''; persistir(); }
     }
 
-    /* ============================================================
-       TELA 3 — Grupo
-       ============================================================ */
+    /* ---------- TELA 3 — Grupo ---------- */
     function renderGrupos() {
         const box = $('#listaGrupos');
         box.innerHTML = '';
-
         const catLabel = state.categoria ? state.categoria : 'Todas as categorias';
-        $('#categoriaSelecionadaLabel').textContent =
-            `Empresa: ${state.empresa} • Categoria: ${catLabel}`;
+        $('#categoriaSelecionadaLabel').textContent = `Empresa: ${state.empresa} • Categoria: ${catLabel}`;
 
         if (!state.grupos.length) {
             box.innerHTML = '<p class="muted">Nenhum grupo encontrado para esta combinação.</p>';
@@ -330,21 +336,24 @@ const Wizard = (() => {
         state.grupos.forEach((g) => {
             const respondidos = g.produtos.filter((p) => state.respostas[codigoDe(p)]).length;
             const completo = respondidos === g.total;
+            const iniciado = respondidos > 0 && !completo;
 
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'card card--grupo' + (completo ? ' is-done' : '');
+            btn.className = 'card card--grupo';
+            if (completo) btn.classList.add('is-done');
+            if (iniciado) btn.classList.add('is-parcial');
             if (g.nomeKey === normalizar(state.grupo)) btn.classList.add('selected');
 
-            const qtdTexto = completo
-                ? `<i class="fas fa-check-circle"></i> ${g.total} ${g.total === 1 ? 'item respondido' : 'itens respondidos'}`
-                : `<i class="fas fa-list"></i> ${g.total} ${g.total === 1 ? 'item' : 'itens'}`;
+            let qtdTexto;
+            if (completo) qtdTexto = `<i class="fas fa-check-circle"></i> ${g.total} ${g.total === 1 ? 'item respondido' : 'itens respondidos'}`;
+            else if (iniciado) qtdTexto = `<i class="fas fa-hourglass-half"></i> ${respondidos}/${g.total} respondidos`;
+            else qtdTexto = `<i class="fas fa-list"></i> ${g.total} ${g.total === 1 ? 'item' : 'itens'}`;
 
             btn.innerHTML = `
                 <span class="card__nome">${g.nome}</span>
                 <span class="card__qtd">${qtdTexto}</span>
             `;
-
             btn.addEventListener('click', () => selecionarGrupo(g.nome));
             box.appendChild(btn);
         });
@@ -366,36 +375,25 @@ const Wizard = (() => {
         irPara(STEPS.PRODUTOS);
     }
 
-    /* ============================================================
-       TELA 4 — Produtos (sem paginação)
-       ============================================================ */
+    /* ---------- TELA 4 — Produtos ---------- */
     function produtosDoGrupoAtual() {
         if (!state.grupo) return state.produtos;
-
         const keyAlvo = normalizar(state.grupo);
         const g = state.grupos.find((x) => x.nomeKey === keyAlvo);
-
         if (g && g.produtos.length) return g.produtos;
-
-        const filtrados = state.produtos.filter(
-            (p) => normalizar(p.GRUPO) === keyAlvo
-        );
+        const filtrados = state.produtos.filter((p) => normalizar(p.GRUPO) === keyAlvo);
         if (filtrados.length) return filtrados;
-
         return state.produtos;
     }
 
     function renderGrupoAtual() {
         const lista = produtosDoGrupoAtual();
         const nomeGrupo = state.grupo || 'Todos os grupos';
-
         $('#grupoAtualLabel').textContent = `Grupo: ${nomeGrupo}`;
-        $('#grupoAtualContador').textContent =
-            `${lista.length} ${lista.length === 1 ? 'item' : 'itens'}`;
+        $('#grupoAtualContador').textContent = `${lista.length} ${lista.length === 1 ? 'item' : 'itens'}`;
 
         const box = $('#listaProdutos');
         box.innerHTML = '';
-
         if (!lista.length) {
             box.innerHTML = '<p class="muted">Nenhum produto disponível neste grupo.</p>';
         } else {
@@ -403,6 +401,7 @@ const Wizard = (() => {
         }
 
         atualizarContadores();
+        atualizarBotaoFinalizar();
     }
 
     function renderProduto(p) {
@@ -413,7 +412,6 @@ const Wizard = (() => {
         const el = document.createElement('article');
         el.className = 'product';
         el.dataset.codigo = codigo;
-
         if (resp.status === STATUS.OK)  el.classList.add('is-ok');
         if (resp.status === STATUS.NOK) el.classList.add('is-nok');
 
@@ -444,6 +442,7 @@ const Wizard = (() => {
             persistir();
             atualizarProduto(el, codigo);
             atualizarContadores();
+            atualizarBotaoFinalizar();
         });
 
         el.querySelector('.btn-nok').addEventListener('click', () => {
@@ -451,6 +450,7 @@ const Wizard = (() => {
             persistir();
             atualizarProduto(el, codigo);
             atualizarContadores();
+            atualizarBotaoFinalizar();
         });
 
         return el;
@@ -471,14 +471,38 @@ const Wizard = (() => {
         $('#contadorTotal').textContent = total;
     }
 
-    /* ============================================================
-       TELA 5 — Resumo
-       ============================================================ */
+    function atualizarBotaoFinalizar() {
+        const btn = $('#btnIrParaResumo');
+        if (!btn) return;
+
+        const listaGrupo = produtosDoGrupoAtual();
+        const respondidosGrupo = listaGrupo.filter((p) => state.respostas[codigoDe(p)]).length;
+        const faltamGrupo = listaGrupo.length - respondidosGrupo;
+
+        const totalGeral = state.produtos.length;
+        const respondidosGeral = Object.keys(state.respostas).length;
+        const faltamGeral = totalGeral - respondidosGeral;
+
+        if (faltamGrupo > 0) {
+            btn.disabled = true;
+            btn.classList.add('btn--blocked');
+            btn.innerHTML = `<i class="fas fa-lock"></i> Responda todos deste grupo (faltam ${faltamGrupo})`;
+        } else if (faltamGeral > 0) {
+            btn.disabled = false;
+            btn.classList.remove('btn--blocked');
+            btn.innerHTML = `<i class="fas fa-list-check"></i> Voltar aos grupos (faltam ${faltamGeral} no total)`;
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('btn--blocked');
+            btn.innerHTML = `<i class="fas fa-flag-checkered"></i> Finalizar e Revisar`;
+        }
+    }
+
+    /* ---------- TELA 5 — Resumo ---------- */
     function montarResumo() {
         const total = state.produtos.length;
         const respondidos = Object.keys(state.respostas).length;
         let sim = 0, nao = 0;
-
         Object.values(state.respostas).forEach((r) => {
             if (r.status === STATUS.OK) sim++;
             else if (r.status === STATUS.NOK) nao++;
@@ -497,27 +521,30 @@ const Wizard = (() => {
                 <div class="resumo__linha"><span>Total de produtos</span><strong>${total}</strong></div>
                 <div class="resumo__linha"><span>Respondidos</span><strong>${respondidos}</strong></div>
                 ${respondidos < total
-                    ? `<div class="resumo__linha" style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i>&nbsp;Atenção: ${total - respondidos} item(ns) não respondido(s)</div>`
+                    ? `<div class="resumo__linha" style="color:var(--danger)"><i class="fas fa-circle-exclamation"></i>&nbsp;Faltam ${total - respondidos} item(ns) — não é possível enviar.</div>`
                     : ''}
             </div>
-
             <div class="resumo__card">
                 <div class="resumo__linha resumo__ok"><span><i class="fas fa-check-circle" style="color:var(--success)"></i> SIM</span><strong>${sim}</strong></div>
                 <div class="resumo__linha resumo__nok"><span><i class="fas fa-times-circle" style="color:var(--danger)"></i> NÃO</span><strong>${nao}</strong></div>
             </div>
         `;
 
-        $('#btnEnviar').disabled = respondidos === 0 || state.enviado;
+        const podeEnviar = respondidos === total && total > 0 && !state.enviado;
+        $('#btnEnviar').disabled = !podeEnviar;
         $('#btnNovaConferencia').hidden = !state.enviado;
     }
 
-    /* ============================================================
-       Envio
-       ============================================================ */
+    /* ---------- Envio ---------- */
     async function enviar() {
         if (state.enviado) return;
 
+        const total = state.produtos.length;
         const respondidos = Object.keys(state.respostas).length;
+        if (respondidos < total) {
+            UI.toast(`Ainda faltam ${total - respondidos} item(ns) para responder.`, 'error');
+            return;
+        }
         if (respondidos === 0) {
             UI.toast('Responda ao menos um item antes de enviar.', 'error');
             return;
@@ -539,7 +566,7 @@ const Wizard = (() => {
                     TIPO:      p.TIPO      || '',
                     USUARIO:   state.usuario,
                     STATUS:    r.status,
-                    MOTIVO:    '',   // coluna mantida em branco
+                    MOTIVO:    '',
                     DATA:      data,
                     HORA:      hora
                 };
@@ -556,7 +583,6 @@ const Wizard = (() => {
 
             state.enviado = true;
             persistir();
-
             UI.toast(`✔ ${payload.length} resposta(s) enviada(s) com sucesso!`, 'success');
 
             $('#resumoBox').innerHTML = `
@@ -576,18 +602,11 @@ const Wizard = (() => {
         }
     }
 
-    /* ============================================================
-       Nova conferência
-       ============================================================ */
+    /* ---------- Nova conferência ---------- */
     function novaConferencia() {
         Object.assign(state, {
-            empresa: '',
-            categoria: '',
-            grupo: '',
-            produtos: [],
-            grupos: [],
-            respostas: {},
-            enviado: false
+            empresa: '', categoria: '', grupo: '',
+            produtos: [], grupos: [], respostas: {}, enviado: false
         });
         Storage.limparEstado();
         $('#btnEnviar').hidden = false;
@@ -599,37 +618,39 @@ const Wizard = (() => {
         irPara(STEPS.EMPRESA);
     }
 
-    /* ============================================================
-       Bind geral
-       ============================================================ */
+    /* ---------- Bind ---------- */
     function bindEventos() {
         $$('[data-voltar]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const atual = Number(document.querySelector('.step:not([hidden])').dataset.step);
-
                 if (atual === STEPS.PRODUTOS && Object.keys(state.respostas).length > 0) {
                     if (!confirm('Voltar descarta as respostas desta rodada. Continuar?')) return;
                     state.respostas = {};
                 }
-
                 if (atual === STEPS.GRUPO) {
                     state.produtos = [];
                     state.grupos = [];
                     state.grupo = '';
                     state.respostas = {};
                 }
-
                 irPara(atual - 1);
-
                 if (atual - 1 === STEPS.GRUPO) renderGrupos();
             });
         });
 
         $('#btnIrParaResumo').addEventListener('click', () => {
-            const lista = produtosDoGrupoAtual();
-            const respondidos = lista.filter((p) => state.respostas[codigoDe(p)]).length;
-            if (respondidos < lista.length) {
-                if (!confirm(`${lista.length - respondidos} item(ns) deste grupo ainda não respondido(s). Deseja continuar mesmo assim?`)) return;
+            const total = state.produtos.length;
+            const respondidos = Object.keys(state.respostas).length;
+            if (respondidos < total) {
+                const faltam = total - respondidos;
+                UI.toast(`Ainda faltam ${faltam} item(ns) para responder em outros grupos.`, 'error');
+                const listaGrupo = produtosDoGrupoAtual();
+                const respondidosGrupo = listaGrupo.filter((p) => state.respostas[codigoDe(p)]).length;
+                if (respondidosGrupo === listaGrupo.length) {
+                    renderGrupos();
+                    irPara(STEPS.GRUPO);
+                }
+                return;
             }
             montarResumo();
             irPara(STEPS.RESUMO);
@@ -651,9 +672,7 @@ const Wizard = (() => {
         });
     }
 
-    /* ============================================================
-       Init
-       ============================================================ */
+    /* ---------- Init ---------- */
     async function iniciar() {
         const saved = restaurar();
         atualizarLabelUsuario();
@@ -661,14 +680,16 @@ const Wizard = (() => {
         bindEventos();
 
         if (saved && saved.usuario) {
+            if (String(saved.usuario).toUpperCase() === USUARIO_DASHBOARD.toUpperCase()) {
+                irPara(STEPS.USUARIO, { salvarEstado: false });
+                return;
+            }
             if (saved.empresa) {
                 await carregarEmpresas();
                 await carregarCategorias(saved.empresa);
-
                 if (saved.categoria !== undefined && saved.categoria !== null) {
                     await carregarProdutos();
                     renderGrupos();
-
                     if (saved.grupo) {
                         renderGrupoAtual();
                         irPara(STEPS.PRODUTOS);
@@ -689,3 +710,5 @@ const Wizard = (() => {
 
     return { iniciar };
 })();
+
+window.Wizard = Wizard;

@@ -3,10 +3,7 @@
    ============================================================ */
 
 const CONFIG = {
-    /**
-     * URL do Web App do Google Apps Script.
-     * Substitua pela URL gerada no deploy.
-     */
+    /** URL do Web App do Google Apps Script */
     APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyulpzUhq-kw69nqTvcjSMhncb6kYFiWKUYVyV9YX1G8FqVZTbo68Jjw7rLQMRHOqJ1/exec',
 
     /** Timeout das requisições (ms) */
@@ -18,11 +15,14 @@ const CONFIG = {
         ESTADO:  'conf_estoque_estado'
     },
 
-    /** Status possíveis (gravados na coluna STATUS) */
+    /** Status possíveis */
     STATUS: {
         OK:  'SIM',
         NOK: 'NÃO'
     },
+
+    /** Usuário com acesso ao dashboard */
+    USUARIO_DASHBOARD: 'FR1B4L',
 
     /** Etapas do wizard */
     STEPS: {
@@ -31,9 +31,12 @@ const CONFIG = {
         CATEGORIA:  2,
         GRUPO:      3,
         PRODUTOS:   4,
-        RESUMO:     5
+        RESUMO:     5,
+        DASHBOARD:  6
     },
 
-    /** Total de etapas (usado na barra de progresso) */
     TOTAL_STEPS: 5
 };
+
+// Garante exposição global (alguns bundlers/navegadores podem isolar)
+window.CONFIG = CONFIG;

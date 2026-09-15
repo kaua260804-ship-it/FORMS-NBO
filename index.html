@@ -5,14 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#007bff">
     <title>Conferência de Estoque</title>
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Estilos -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/wizard.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- ===== BIBLIOTECAS EXTERNAS (ORDEM OBRIGATÓRIA) ===== -->
+    <!-- 1º Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- 2º Plugin de rótulos (depende do Chart.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+    <!-- 3º SheetJS (independente) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<!-- ===== BARRA DE PROGRESSO FIXA ===== -->
+<!-- ===== HEADER ===== -->
 <header class="app-header">
     <div class="app-header__top">
         <div class="app-header__brand">
@@ -40,7 +53,7 @@
 <!-- ===== ÁREA PRINCIPAL ===== -->
 <main id="appMain">
 
-    <!-- TELA 0: Identificação do usuário -->
+    <!-- TELA 0: Usuário -->
     <section class="step" data-step="0">
         <div class="step__body step__body--center">
             <div class="hero-icon"><i class="fas fa-user-check"></i></div>
@@ -60,7 +73,7 @@
         </div>
     </section>
 
-    <!-- TELA 1: Seleção de Empresa -->
+    <!-- TELA 1: Empresa -->
     <section class="step" data-step="1" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -75,7 +88,7 @@
         </div>
     </section>
 
-    <!-- TELA 2: Seleção de Categoria -->
+    <!-- TELA 2: Categoria -->
     <section class="step" data-step="2" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -91,7 +104,7 @@
         </div>
     </section>
 
-    <!-- TELA 3: Seleção de Grupo -->
+    <!-- TELA 3: Grupo -->
     <section class="step" data-step="3" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -107,13 +120,12 @@
         </div>
     </section>
 
-    <!-- TELA 4: Conferência de Produtos -->
+    <!-- TELA 4: Produtos -->
     <section class="step" data-step="4" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
             <h2 class="step__title">Conferência de Produtos</h2>
         </div>
-
         <div class="step__body">
             <div class="conf-header">
                 <div class="conf-header__grupo">
@@ -124,21 +136,18 @@
                     <span id="contadorRespondidos">0</span> / <span id="contadorTotal">0</span> respondidos
                 </div>
             </div>
-
             <p class="conf-pergunta">
                 <i class="fas fa-question-circle"></i>
                 Este item possui estoque?
             </p>
-
             <div id="listaProdutos" class="products"></div>
-
             <button type="button" id="btnIrParaResumo" class="btn btn--primary btn--lg btn--block">
                 <i class="fas fa-flag-checkered"></i> Finalizar e Revisar
             </button>
         </div>
     </section>
 
-    <!-- TELA 5: Confirmação / Resumo -->
+    <!-- TELA 5: Resumo -->
     <section class="step" data-step="5" hidden>
         <div class="step__header">
             <button type="button" class="btn btn--ghost" data-voltar><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -146,7 +155,6 @@
         </div>
         <div class="step__body">
             <div class="resumo" id="resumoBox"></div>
-
             <div class="resumo-actions">
                 <button type="button" id="btnEnviar" class="btn btn--success btn--lg btn--block">
                     <i class="fas fa-paper-plane"></i> Enviar Respostas
@@ -154,6 +162,136 @@
                 <button type="button" id="btnNovaConferencia" class="btn btn--secondary btn--lg btn--block" hidden>
                     <i class="fas fa-redo"></i> Nova Conferência
                 </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- TELA 6: DASHBOARD -->
+    <section class="step dashboard" data-step="6" hidden>
+        <div class="dash-header">
+            <div class="dash-header__title">
+                <i class="fas fa-chart-line"></i>
+                <h2>Dashboard de Ruptura</h2>
+            </div>
+            <div class="dash-header__actions">
+                <button type="button" id="dashAtualizar" class="btn btn--secondary">
+                    <i class="fas fa-rotate"></i> Atualizar
+                </button>
+                <button type="button" id="dashSair" class="btn btn--ghost">
+                    <i class="fas fa-right-from-bracket"></i> Sair
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="dash-filtros">
+            <div class="dash-filtros__row">
+                <label class="field field--compact">
+                    <span class="field__label">Data início</span>
+                    <select id="filtroDataDe" class="field__input">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label class="field field--compact">
+                    <span class="field__label">Data fim</span>
+                    <select id="filtroDataAte" class="field__input">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+            </div>
+            <div class="dash-filtros__row">
+                <label class="field field--compact">
+                    <span class="field__label">Empresa</span>
+                    <select id="filtroEmpresa" class="field__input"><option value="">Todas</option></select>
+                </label>
+                <label class="field field--compact">
+                    <span class="field__label">Tipo</span>
+                    <select id="filtroTipo" class="field__input"><option value="">Todos</option></select>
+                </label>
+            </div>
+            <div class="dash-filtros__row">
+                <label class="field field--compact">
+                    <span class="field__label">Grupo</span>
+                    <select id="filtroGrupo" class="field__input"><option value="">Todos</option></select>
+                </label>
+                <label class="field field--compact">
+                    <span class="field__label">Subgrupo</span>
+                    <select id="filtroSubgrupo" class="field__input"><option value="">Todos</option></select>
+                </label>
+            </div>
+            <div class="dash-filtros__actions">
+                <button type="button" id="filtroLimpar" class="btn btn--secondary btn--block">
+                    <i class="fas fa-eraser"></i> Limpar filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="dash-kpis">
+            <div class="kpi kpi--hero">
+                <div class="kpi__label">RUPTURA GERAL</div>
+                <div class="kpi__value" id="kpiRuptura">—</div>
+                <div class="kpi__sub" id="kpiRupturaSub">— itens avaliados</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi__label">Total respondido</div>
+                <div class="kpi__value" id="kpiTotal">0</div>
+                <div class="kpi__sub">após deduplicação</div>
+            </div>
+            <div class="kpi kpi--danger">
+                <div class="kpi__label">Em ruptura (NÃO)</div>
+                <div class="kpi__value" id="kpiNao">0</div>
+                <div class="kpi__sub" id="kpiNaoSub">0%</div>
+            </div>
+            <div class="kpi kpi--success">
+                <div class="kpi__label">Com estoque (SIM)</div>
+                <div class="kpi__value" id="kpiSim">0</div>
+                <div class="kpi__sub" id="kpiSimSub">0%</div>
+            </div>
+        </div>
+
+        <!-- Grid de gráficos -->
+        <div class="dash-grid">
+            <div class="dash-card dash-card--wide">
+                <h3 class="dash-card__title">% Ruptura por Empresa</h3>
+                <div class="dash-card__canvas"><canvas id="chartEmpresa"></canvas></div>
+            </div>
+
+            <div class="dash-card">
+                <h3 class="dash-card__title">% Ruptura por Segmento</h3>
+                <div class="dash-card__canvas dash-card__canvas--pie"><canvas id="chartSegmento"></canvas></div>
+            </div>
+
+            <div class="dash-card dash-card--wide">
+                <h3 class="dash-card__title">% Ruptura por Categoria</h3>
+                <div class="dash-card__canvas"><canvas id="chartCategoria"></canvas></div>
+            </div>
+
+            <div class="dash-card">
+                <h3 class="dash-card__title">% Ruptura por Grupo</h3>
+                <div class="dash-card__canvas"><canvas id="chartGrupo"></canvas></div>
+            </div>
+
+            <div class="dash-card dash-card--wide">
+                <h3 class="dash-card__title">Top 10 Produtos em Ruptura</h3>
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th class="tac">Qtd Ruptura</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaTopProdutos">
+                            <tr><td colspan="2" class="tac muted">Sem dados.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <h3 class="dash-card__title">Distribuição SIM / NÃO</h3>
+                <div class="dash-card__canvas dash-card__canvas--pie"><canvas id="chartSimNao"></canvas></div>
             </div>
         </div>
     </section>
@@ -169,11 +307,85 @@
 <!-- ===== TOASTS ===== -->
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<!-- ===== SCRIPTS ===== -->
+<!-- ===== DEPURADOR ===== -->
+<div id="debugPanel" style="position:fixed;bottom:12px;left:12px;z-index:9999;background:#0f172a;color:#e2e8f0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:10px 12px;border-radius:8px;max-width:380px;box-shadow:0 10px 30px rgba(0,0,0,.35);line-height:1.5;display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong style="color:#60a5fa;">🐞 Depurador</strong>
+        <button onclick="document.getElementById('debugPanel').style.display='none';document.getElementById('debugToggle').style.display='block';" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div id="debugContent" style="white-space:pre-wrap;word-break:break-word;"></div>
+</div>
+<button id="debugToggle" style="position:fixed;bottom:12px;left:12px;z-index:9998;background:#0f172a;color:#60a5fa;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.3);">🐞</button>
+
+<!-- ===== DEPURADOR (script) ===== -->
+<script>
+(function () {
+    const debugPanel = document.getElementById('debugPanel');
+    const debugToggle = document.getElementById('debugToggle');
+    const debugContent = document.getElementById('debugContent');
+    const logs = [];
+    const modulosEsperados = ['CONFIG', 'Storage', 'API', 'XLSXLoader', 'Wizard', 'Dashboard', 'UI', 'Chart', 'ChartDataLabels', 'XLSX'];
+
+    function render() {
+        const linhas = modulosEsperados.map((m) => {
+            const ok = typeof window[m] !== 'undefined';
+            return `${ok ? '✅' : '❌'} window.${m}`;
+        });
+        debugContent.innerHTML =
+            `<strong>Módulos:</strong>\n${linhas.join('\n')}\n\n` +
+            `<strong>Log:</strong>\n${logs.length ? logs.join('\n') : '(sem erros)'}`;
+    }
+    function log(msg) {
+        logs.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+        if (logs.length > 20) logs.shift();
+        render();
+    }
+    window.addEventListener('error', (e) => {
+        const arquivo = (e.filename || '').split('/').pop();
+        log(`ERRO ${arquivo}:${e.lineno} → ${e.message}`);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        log(`PROMISE: ${e.reason && e.reason.message ? e.reason.message : e.reason}`);
+    });
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            if (typeof Chart === 'undefined') log('⚠️ Chart.js NÃO carregou.');
+            if (typeof ChartDataLabels === 'undefined') log('⚠️ chartjs-plugin-datalabels NÃO carregou.');
+            if (typeof XLSX === 'undefined') log('⚠️ SheetJS NÃO carregou.');
+            modulosEsperados.forEach((m) => {
+                if (typeof window[m] === 'undefined') log(`⚠️ window.${m} indefinido.`);
+            });
+            const essenciais = ['CONFIG', 'Wizard', 'Dashboard', 'API'];
+            const faltando = essenciais.filter((m) => typeof window[m] === 'undefined');
+            if (faltando.length) {
+                debugPanel.style.display = 'block';
+                debugToggle.style.display = 'none';
+            }
+        }, 500);
+    });
+    debugToggle.addEventListener('click', () => {
+        debugPanel.style.display = 'block';
+        debugToggle.style.display = 'none';
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+            const aberto = debugPanel.style.display === 'block';
+            debugPanel.style.display = aberto ? 'none' : 'block';
+            debugToggle.style.display = aberto ? 'block' : 'none';
+        }
+    });
+    render();
+})();
+</script>
+
+<!-- ===== SCRIPTS DO PROJETO ===== -->
 <script src="js/config.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/api.js"></script>
+<script src="js/xlsx-loader.js"></script>
 <script src="js/wizard.js"></script>
+<script src="js/dashboard.js"></script>
 <script src="js/main.js"></script>
+
 </body>
 </html>

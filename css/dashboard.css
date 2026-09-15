@@ -1,0 +1,221 @@
+/* ============================================================
+   dashboard.css — Tema claro, responsivo
+   ============================================================ */
+
+.dashboard { padding-bottom: 40px; }
+
+/* ---------- Header ---------- */
+.dash-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.dash-header__title { display: flex; align-items: center; gap: 12px; }
+.dash-header__title i { font-size: 1.6rem; color: var(--primary); }
+.dash-header__title h2 { font-size: 1.35rem; color: var(--text); }
+.dash-header__actions { display: flex; gap: 8px; }
+.dash-header__actions .btn { min-height: 42px; padding: 0 14px; font-size: .9rem; }
+
+/* ---------- Filtros ---------- */
+.dash-filtros {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.dash-filtros__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.field--compact { max-width: none; gap: 4px; }
+.field--compact .field__label {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+.field--compact .field__input {
+    min-height: 44px;
+    font-size: .95rem;
+    padding: 0 12px;
+    border-width: 1px;
+    background: #fff;
+}
+
+.dash-filtros__actions { display: flex; justify-content: flex-end; }
+.dash-filtros__actions .btn { min-height: 44px; max-width: 260px; }
+
+/* ---------- KPIs ---------- */
+.dash-kpis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.kpi__label {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.kpi__value { font-size: 1.8rem; font-weight: 800; color: var(--text); line-height: 1.1; }
+.kpi__sub   { font-size: .78rem; color: var(--text-soft); font-weight: 600; }
+
+.kpi--hero {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    border-color: #1e40af;
+}
+.kpi--hero .kpi__label { color: rgba(255,255,255,.85); }
+.kpi--hero .kpi__value { color: #fff; font-size: 2.6rem; }
+.kpi--hero .kpi__sub   { color: rgba(255,255,255,.85); }
+
+.kpi--danger  { border-left: 4px solid var(--danger); }
+.kpi--danger .kpi__value { color: var(--danger); }
+.kpi--success { border-left: 4px solid var(--success); }
+.kpi--success .kpi__value { color: var(--success-dark); }
+
+/* ---------- Grid de cards ---------- */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.dash-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    overflow: visible;
+}
+
+.dash-card__title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+/* ============================================================
+   Canvas — altura base.
+   O JS altera dinamicamente o height do CONTAINER quando o
+   gráfico é de barras horizontais, conforme a quantidade de
+   itens. Por isso aqui é só um valor mínimo.
+   ============================================================ */
+.dash-card__canvas {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    height: 320px;
+    /* se o JS setar style="height:XXXpx" esse valor tem prioridade */
+}
+
+.dash-card__canvas--pie {
+    height: 340px;
+    min-height: 300px;
+}
+
+.dash-card__canvas canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ---------- Tabela Top 10 ---------- */
+.dash-table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+.dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.dash-table thead { background: #f1f5f9; }
+.dash-table th,
+.dash-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.dash-table th {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text-soft);
+    font-weight: 800;
+}
+.dash-table tbody tr:hover { background: #f8fafc; }
+.dash-table .tac { text-align: center; }
+.dash-table strong { color: var(--danger); font-weight: 800; }
+
+/* ============================================================
+   TABLET (≥ 720px)
+   ============================================================ */
+@media (min-width: 720px) {
+    .dash-kpis { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
+    .kpi--hero { grid-column: auto; }
+    .kpi--hero .kpi__value { font-size: 2.2rem; }
+
+    .dash-filtros {
+        grid-template-columns: repeat(3, 1fr) auto;
+        align-items: end;
+    }
+    .dash-filtros__row { grid-template-columns: 1fr 1fr; }
+    .dash-filtros__actions { grid-column: auto; }
+
+    .dash-grid { grid-template-columns: 1fr 1fr; }
+    .dash-card--wide { grid-column: 1 / -1; }
+
+    .dash-card__canvas { min-height: 340px; height: 340px; }
+    .dash-card__canvas--pie { min-height: 320px; height: 320px; }
+}
+
+/* ============================================================
+   DESKTOP GRANDE (≥ 1100px)
+   ============================================================ */
+@media (min-width: 1100px) {
+    .dash-grid { gap: 20px; }
+    .dash-card { padding: 20px; }
+    .dash-card__title { font-size: 1rem; }
+    .dash-card__canvas { min-height: 360px; height: 360px; }
+    .dash-card__canvas--pie { min-height: 340px; height: 340px; }
+    .dash-header__title h2 { font-size: 1.5rem; }
+}
+
+/* ---------- Mobile estreito ---------- */
+@media (max-width: 420px) {
+    .dash-filtros__row { grid-template-columns: 1fr; }
+    .dash-kpis { grid-template-columns: 1fr; }
+    .kpi--hero { grid-column: 1; }
+    .kpi__value { font-size: 1.5rem; }
+    .kpi--hero .kpi__value { font-size: 2.1rem; }
+    .dash-card__canvas { min-height: 300px; height: 300px; }
+    .dash-card__canvas--pie { min-height: 280px; height: 280px; }
+}

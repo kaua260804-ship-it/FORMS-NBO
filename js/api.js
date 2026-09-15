@@ -1,13 +1,19 @@
 /* ============================================================
-   api.js — Comunicação com Google Apps Script (Web App)
+   api.js — Comunicação com Google Apps Script
    ============================================================ */
 
 const API = (() => {
-    const { APPS_SCRIPT_URL, TIMEOUT } = CONFIG;
+    const TIMEOUT = 45000;
 
-    /** Requisição com timeout (GET) */
+    function getUrlBase() {
+        return (window.CONFIG && window.CONFIG.APPS_SCRIPT_URL) || '';
+    }
+
     async function get(params = {}) {
-        const url = new URL(APPS_SCRIPT_URL);
+        const base = getUrlBase();
+        if (!base) throw new Error('APPS_SCRIPT_URL não configurada.');
+
+        const url = new URL(base);
         Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
         const controller = new AbortController();
@@ -22,13 +28,15 @@ const API = (() => {
         }
     }
 
-    /** POST em text/plain para evitar preflight CORS */
     async function post(payload) {
+        const base = getUrlBase();
+        if (!base) throw new Error('APPS_SCRIPT_URL não configurada.');
+
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), TIMEOUT);
 
         try {
-            const resp = await fetch(APPS_SCRIPT_URL, {
+            const resp = await fetch(base, {
                 method: 'POST',
                 body: JSON.stringify(payload),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -42,10 +50,11 @@ const API = (() => {
         }
     }
 
-    const getEmpresas     = ()                    => get({ action: 'empresas' });
-    const getCategorias   = (empresa)             => get({ action: 'categorias', empresa });
-    const getProdutos     = (empresa, categoria)  => get({ action: 'produtos', empresa, categoria });
-    const salvarRespostas = (respostas)           => post({ action: 'salvar', respostas });
+    const salvarRespostas = (respostas) => post({ action: 'salvar', respostas });
+    const getRespostas    = ()            => get({ action: 'respostas' });
+    const ping            = ()            => get({ action: 'ping' });
 
-    return { getEmpresas, getCategorias, getProdutos, salvarRespostas };
+    return { salvarRespostas, getRespostas, ping };
 })();
+
+window.API = API;
