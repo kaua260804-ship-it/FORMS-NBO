@@ -31,13 +31,11 @@
     grid-template-columns: 1fr;
     gap: 12px;
 }
-
 .dash-filtros__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
-
 .field--compact { max-width: none; gap: 4px; }
 .field--compact .field__label {
     font-size: .78rem;
@@ -51,7 +49,6 @@
     border-width: 1px;
     background: #fff;
 }
-
 .dash-filtros__actions { display: flex; justify-content: flex-end; }
 .dash-filtros__actions .btn { min-height: 44px; max-width: 260px; }
 
@@ -81,7 +78,6 @@
 }
 .kpi__value { font-size: 1.8rem; font-weight: 800; color: var(--text); line-height: 1.1; }
 .kpi__sub   { font-size: .78rem; color: var(--text-soft); font-weight: 600; }
-
 .kpi--hero {
     grid-column: 1 / -1;
     background: linear-gradient(135deg, #1e3a8a, #2563eb);
@@ -90,7 +86,6 @@
 .kpi--hero .kpi__label { color: rgba(255,255,255,.85); }
 .kpi--hero .kpi__value { color: #fff; font-size: 2.6rem; }
 .kpi--hero .kpi__sub   { color: rgba(255,255,255,.85); }
-
 .kpi--danger  { border-left: 4px solid var(--danger); }
 .kpi--danger .kpi__value { color: var(--danger); }
 .kpi--success { border-left: 4px solid var(--success); }
@@ -102,7 +97,6 @@
     grid-template-columns: 1fr;
     gap: 16px;
 }
-
 .dash-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -115,7 +109,6 @@
     min-width: 0;
     overflow: visible;
 }
-
 .dash-card__title {
     font-size: .95rem;
     font-weight: 700;
@@ -124,25 +117,17 @@
     letter-spacing: .4px;
 }
 
-/* ============================================================
-   Canvas — altura base.
-   O JS altera dinamicamente o height do CONTAINER quando o
-   gráfico é de barras horizontais, conforme a quantidade de
-   itens. Por isso aqui é só um valor mínimo.
-   ============================================================ */
+/* Canvas: altura controlada pelo JS em barras horizontais */
 .dash-card__canvas {
     position: relative;
     width: 100%;
     min-height: 320px;
     height: 320px;
-    /* se o JS setar style="height:XXXpx" esse valor tem prioridade */
 }
-
 .dash-card__canvas--pie {
     height: 340px;
     min-height: 300px;
 }
-
 .dash-card__canvas canvas {
     display: block !important;
     width: 100% !important;
@@ -176,7 +161,7 @@
 .dash-table strong { color: var(--danger); font-weight: 800; }
 
 /* ============================================================
-   TABLET (≥ 720px)
+   TABLET (≥ 720px): 2 colunas
    ============================================================ */
 @media (min-width: 720px) {
     .dash-kpis { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
@@ -193,19 +178,17 @@
     .dash-grid { grid-template-columns: 1fr 1fr; }
     .dash-card--wide { grid-column: 1 / -1; }
 
-    .dash-card__canvas { min-height: 340px; height: 340px; }
-    .dash-card__canvas--pie { min-height: 320px; height: 320px; }
+    /* .dash-card__canvas fica controlado pelo JS */
 }
 
 /* ============================================================
-   DESKTOP GRANDE (≥ 1100px)
+   DESKTOP GRANDE (≥ 1100px): mais espaço, letras maiores
    ============================================================ */
 @media (min-width: 1100px) {
     .dash-grid { gap: 20px; }
-    .dash-card { padding: 20px; }
+    .dash-card { padding: 22px 24px; }   /* mais padding lateral p/ caber labels */
     .dash-card__title { font-size: 1rem; }
-    .dash-card__canvas { min-height: 360px; height: 360px; }
-    .dash-card__canvas--pie { min-height: 340px; height: 340px; }
+    .dash-card__canvas--pie { min-height: 380px; height: 380px; }
     .dash-header__title h2 { font-size: 1.5rem; }
 }
 

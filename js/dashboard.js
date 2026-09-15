@@ -1,13 +1,15 @@
 /* ============================================================
-   dashboard.js — Leitura de respostas e gráficos
-   - Rótulos de dados (chartjs-plugin-datalabels) sempre visíveis
-   - Filtro de data com datas disponíveis (De / Até)
-   - Parser de data flexível (DD/MM/AAAA, ISO, serial)
-   - Altura dinâmica para caber todos os grupos sem espremer
+   dashboard.js — Leitura de respostas via XLSX local
+   - Fonte: dados/RESPOSTAS.xlsx (rápido, sem Apps Script)
+   - Filtro de data com datas disponíveis
+   - Labels do eixo Y coladas à ESQUERDA com respiro
+   - Altura dinâmica conforme número de itens
    ============================================================ */
 
 const Dashboard = (() => {
     const STATUS = { OK: 'SIM', NOK: 'NÃO' };
+
+    const ARQUIVO_RESPOSTAS = 'dados/RESPOSTAS.xlsx';
 
     const charts = {
         empresa: null, segmento: null, categoria: null,
@@ -15,9 +17,19 @@ const Dashboard = (() => {
     };
 
     let respostasUnicas = [];
+    let respostasBrutas = [];
     const $ = (s) => document.querySelector(s);
 
     function dbg(msg) { console.log('[Dashboard]', msg); }
+
+    /* ---------------- Normalizador de cabeçalhos ---------------- */
+    function normalizar(str) {
+        return String(str == null ? '' : str)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+    }
 
     /* ---------------- Parser de data robusto ---------------- */
     function parseDataFlex(valor) {
@@ -56,7 +68,63 @@ const Dashboard = (() => {
         return d ? d.getTime() : 0;
     }
 
-    /* ---------------- Deduplicação ---------------- */
+    /* ---------------- Leitura do XLSX local ---------------- */
+    async function lerRespostasXLSX() {
+        if (typeof XLSX === 'undefined') {
+            throw new Error('SheetJS (XLSX) não carregado. Verifique a CDN.');
+        }
+
+        const resp = await fetch(ARQUIVO_RESPOSTAS + '?v=' + Date.now(), { cache: 'no-store' });
+        if (!resp.ok) {
+            throw new Error(
+                `Não encontrei "${ARQUIVO_RESPOSTAS}" (HTTP ${resp.status}). ` +
+                `Exporte a aba RESPOSTAS do Google Sheets como .xlsx e salve em dados/.`
+            );
+        }
+
+        const buffer = await resp.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+
+        if (!workbook.SheetNames || !workbook.SheetNames.length) {
+            throw new Error('XLSX sem abas.');
+        }
+
+        // Pega a primeira aba (mesmo que se chame "RESPOSTAS" ou outra)
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        const linhas = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            raw: false,
+            defval: ''
+        });
+
+        if (!linhas.length) return [];
+
+        const cabecalhos = linhas[0].map((h) => String(h || '').trim());
+        const registros = [];
+
+        for (let i = 1; i < linhas.length; i++) {
+            const linha = linhas[i];
+            if (!linha || !linha.length) continue;
+
+            const obj = {};
+            let vazio = true;
+            for (let j = 0; j < cabecalhos.length; j++) {
+                const chave = cabecalhos[j];
+                if (!chave) continue;
+                const valor = linha[j] == null ? '' : String(linha[j]).trim();
+                obj[chave] = valor;
+                if (valor !== '') vazio = false;
+            }
+            if (!vazio) registros.push(obj);
+        }
+        return registros;
+    }
+
+    /* ---------------- Deduplicação ----------------
+       Chave: DATA | EMPRESA | CODIGO | USUARIO
+       SIM vence qualquer NÃO no mesmo dia/usuário/código.
+    ------------------------------------------------- */
     function deduplicar(lista) {
         const mapa = new Map();
         lista.forEach((r) => {
@@ -248,7 +316,7 @@ const Dashboard = (() => {
     const COR_VERMELHO = '#ef4444';
     const COR_CINZA = '#94a3b8';
 
-    /* ---------------- Plugin datalabels global ---------------- */
+    /* ---------------- Plugin datalabels ---------------- */
     function garantirDatalabels() {
         if (typeof Chart === 'undefined') return false;
         if (typeof ChartDataLabels === 'undefined') return false;
@@ -256,15 +324,12 @@ const Dashboard = (() => {
         return true;
     }
 
-    /* ---------------- Altura dinâmica do canvas ----------------
-       Regra: ~34px por barra + 80px de respiro (título/legenda).
-       Mínimo 300px, máximo 900px.
-    --------------------------------------------------------- */
+    /* ---------------- Altura dinâmica ---------------- */
     function calcularAltura(qtdBarras) {
-        const base = 80;
-        const porBarra = 34;
+        const base = 90;
+        const porBarra = 38;
         const altura = base + qtdBarras * porBarra;
-        return Math.max(300, Math.min(900, altura));
+        return Math.max(320, Math.min(1400, altura));
     }
 
     /* ---------------- Gráficos ---------------- */
@@ -277,20 +342,12 @@ const Dashboard = (() => {
         const labels = dados.map((d) => d.chave);
         const valores = dados.map((d) => Number(d.perc.toFixed(2)));
 
-        // Ajusta a altura do container dinamicamente
         const wrapper = ctx.parentElement;
         if (wrapper && horizontal) {
             wrapper.style.height = calcularAltura(labels.length) + 'px';
         } else if (wrapper) {
             wrapper.style.height = '';
         }
-
-        // Reserva espaço à esquerda para labels do eixo Y (labels quebradas em 2 linhas)
-        // Calcula com base no texto mais longo dividido em 2 linhas de ~18 caracteres.
-        const labelMaisLonga = labels.reduce((a, b) => (b.length > a.length ? b : a), '');
-        const larguraLabel = horizontal
-            ? Math.min(220, Math.max(120, Math.ceil(labelMaisLonga.length / 2) * 7.5 + 10))
-            : 6;
 
         const cfg = {
             type: 'bar',
@@ -302,19 +359,18 @@ const Dashboard = (() => {
                     backgroundColor: COR_AZUL,
                     hoverBackgroundColor: COR_AZUL_ESCURO,
                     borderRadius: 4,
-                    maxBarThickness: horizontal ? 20 : 60
+                    maxBarThickness: horizontal ? 18 : 60
                 }]
             },
             plugins: temPlugin ? [ChartDataLabels] : [],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                // Layout: esquerda reserva espaço p/ labels, direita p/ rótulos
                 layout: {
                     padding: {
                         top: horizontal ? 6 : 30,
-                        right: horizontal ? 64 : 12,
-                        left: horizontal ? larguraLabel : 6,
+                        right: horizontal ? 70 : 12,
+                        left: 8,
                         bottom: 6
                     }
                 },
@@ -356,26 +412,12 @@ const Dashboard = (() => {
                         },
                     y: horizontal
                         ? {
-                            // FIX: alinha ticks à direita (encostados no eixo),
-                            // o layout.padding.left reserva espaço à esquerda.
-                            position: 'left',
                             ticks: {
                                 color: '#0f172a',
                                 font: { weight: '700', size: 11 },
                                 autoSkip: false,
-                                crossAlign: 'far',   // <— alinha à direita do eixo
-                                // Quebra labels muito longas em 2 linhas
-                                callback: function (value) {
-                                    const label = String(this.getLabelForValue(value) || '');
-                                    if (label.length <= 22) return label;
-                                    const partes = [];
-                                    let resto = label;
-                                    while (resto.length > 0) {
-                                        partes.push(resto.slice(0, 22).trim());
-                                        resto = resto.slice(22);
-                                    }
-                                    return partes;
-                                }
+                                crossAlign: 'far',
+                                padding: 24
                             },
                             grid: { display: false }
                         }
@@ -485,14 +527,12 @@ const Dashboard = (() => {
         });
     }
 
-    /* ---------------- Carregamento ---------------- */
+    /* ---------------- Carregamento (local) ---------------- */
     async function carregar() {
         UI.loading('Carregando respostas...');
         try {
-            const resp = await API.getRespostas();
-            if (!resp.sucesso) throw new Error(resp.mensagem || 'Falha ao carregar respostas.');
-
-            const brutos = resp.dados || [];
+            const brutos = await lerRespostasXLSX();
+            respostasBrutas = brutos;
             dbg(`Respostas brutas: ${brutos.length}`);
             if (brutos.length) {
                 dbg(`Exemplo de DATA: ${JSON.stringify(brutos[0].DATA)} (tipo: ${typeof brutos[0].DATA})`);
@@ -505,8 +545,23 @@ const Dashboard = (() => {
             render();
             UI.toast(`✔ ${respostasUnicas.length} registro(s) único(s) carregado(s).`, 'success', 2500);
         } catch (e) {
-            UI.toast('Erro ao carregar respostas: ' + e.message, 'error');
+            UI.toast('Erro ao carregar respostas: ' + e.message, 'error', 8000);
             console.error('[Dashboard] Erro:', e);
+            // Mensagem amigável no resumo se XLSX não existir
+            const box = $('#resumoBox');
+            if (box) {
+                box.innerHTML = `
+                    <div class="resumo__card" style="border-left:4px solid var(--danger)">
+                        <strong>Arquivo <code>${ARQUIVO_RESPOSTAS}</code> não encontrado</strong>
+                        <p class="muted" style="margin-top:8px">
+                            1. Abra a planilha Google → aba <strong>RESPOSTAS</strong><br>
+                            2. <strong>Arquivo → Fazer download → Microsoft Excel (.xlsx)</strong><br>
+                            3. Renomeie para <code>RESPOSTAS.xlsx</code> e coloque em <code>dados/</code><br>
+                            4. Recarregue a página (Ctrl+F5)
+                        </p>
+                    </div>
+                `;
+            }
         } finally {
             UI.hideLoading();
         }
